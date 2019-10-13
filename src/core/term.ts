@@ -68,8 +68,8 @@ export const showTerm = (t: Term): string => {
   if (t.tag === 'App')
     return getApps(t)
       .map((t, i, a) => showTermP(t,
-        t.tag === 'App' ||
-        t.tag === 'AppT' ||
+        (t.tag === 'App' && i > 0) ||
+        (t.tag === 'AppT' && i > 0) ||
         (t.tag === 'Abs' && i !== a.length - 1) ||
         (t.tag === 'AbsT' && i !== a.length - 1)))
       .join(' ');

@@ -1,7 +1,7 @@
-import { Type, TCon, eqType, showType, isTFun, getTFun, substIn, TForall, TFun } from "./types";
-import { Term, Con, showTerm } from "./term";
-import { kfun, kType, Kind, showKind, eqKind, KFun } from "./kinds";
-import { List, Nil, index, Cons } from "../list";
+import { Type, TCon, eqType, showType, isTFun, getTFun, substIn, TForall, TFun } from './types';
+import { Term, Con, showTerm } from './term';
+import { kfun, kType, Kind, showKind, eqKind } from './kinds';
+import { List, Nil, index, Cons } from '../list';
 
 export const terr = (msg: string) => {
   throw new TypeError(msg);
@@ -29,8 +29,8 @@ export const synthType = (ks: EnvK, ty: Type): Kind => {
     return ki;
   }
   if (ty.tag === 'TForall') {
-    const ki = synthType(Cons(ty.kind, ks), ty.body);
-    return KFun(ty.kind, ki);
+    checkType(Cons(ty.kind, ks), ty.body, kType);
+    return kType;
   }
   if (ty.tag === 'TApp') {
     const ki = synthType(ks, ty.left);
