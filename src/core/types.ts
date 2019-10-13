@@ -1,14 +1,17 @@
 import { Kind, eqKind, showKindP } from './kinds';
 
 export type TCon = '->';
+export type THash = string;
 export type Ix = number;
 export type Type
   = { tag: 'TCon', name: TCon }
+  | { tag: 'THash', hash: THash }
   | { tag: 'TVar', index: Ix }
   | { tag: 'TApp', left: Type, right: Type }
   | { tag: 'TForall', kind: Kind, body: Type };
 
 export const TCon = (name: TCon): Type => ({ tag: 'TCon', name });
+export const THash = (hash: THash): Type => ({ tag: 'THash', hash });
 export const TVar = (index: Ix): Type => ({ tag: 'TVar', index });
 export const TApp = (left: Type, right: Type): Type => ({ tag: 'TApp', left, right });
 export const TForall = (kind: Kind, body: Type): Type => ({ tag: 'TForall', kind, body });
@@ -39,6 +42,7 @@ export const getTFuns = (t: Type): Type[] => {
 
 export const tappFrom = (ts: Type[]): Type => ts.reduce(TApp);
 export const tapp = (...ts: Type[]): Type => tappFrom(ts);
+export const tapp1 = (t: Type, ts: Type[]): Type => ts.reduce(TApp, t);
 export const getTApps = (t: Type): Type[] => {
   const r = [];
   while (t.tag === 'TApp') {
@@ -63,6 +67,7 @@ export const showTypeP = (t: Type, b: boolean): string =>
   b ? `(${showType(t)})` : showType(t);
 export const showType = (t: Type): string => {
   if (t.tag === 'TCon') return t.name;
+  if (t.tag === 'THash') return `#${t.hash}`;
   if (t.tag === 'TVar') return `${t.index}`;
   if (isTFun(t))
     return getTFuns(t)
@@ -81,6 +86,7 @@ export const showTDef = (t: TDef): string =>
 
 export const eqType = (a: Type, b: Type): boolean => {
   if (a.tag === 'TCon') return b.tag === 'TCon' && a.name === b.name;
+  if (a.tag === 'THash') return b.tag === 'THash' && a.hash === b.hash;
   if (a.tag === 'TVar') return b.tag === 'TVar' && a.index === b.index;
   if (a.tag === 'TApp')
     return b.tag === 'TApp' && eqType(a.left, b.left) && eqType(a.right, b.right);

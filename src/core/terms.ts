@@ -1,22 +1,29 @@
-import { Type, showTypeP } from './types';
+import { Type, showTypeP, THash } from './types';
 import { Kind, showKindP } from './kinds';
 
 export type Con = never;
+export type Hash = string;
 export type Ix = number;
 export type Term
   = { tag: 'Con', name: Con }
+  | { tag: 'Hash', hash: Hash }
   | { tag: 'Var', index: Ix }
   | { tag: 'App', left: Term, right: Term }
   | { tag: 'Abs', type: Type, body: Term }
   | { tag: 'AppT', left: Term, right: Type }
-  | { tag: 'AbsT', kind: Kind, body: Term };
+  | { tag: 'AbsT', kind: Kind, body: Term }
+  | { tag: 'Pack', hash: THash }
+  | { tag: 'Unpack', hash: THash };
 
 export const Con = (name: Con): Term => ({ tag: 'Con', name });
+export const Hash = (hash: Hash): Term => ({ tag: 'Hash', hash });
 export const Var = (index: Ix): Term => ({ tag: 'Var', index });
 export const App = (left: Term, right: Term): Term => ({ tag: 'App', left, right });
 export const Abs = (type: Type, body: Term): Term => ({ tag: 'Abs', type, body });
 export const AppT = (left: Term, right: Type): Term => ({ tag: 'AppT', left, right });
 export const AbsT = (kind: Kind, body: Term): Term => ({ tag: 'AbsT', kind, body });
+export const Pack = (hash: THash): Term => ({ tag: 'Pack', hash });
+export const Unpack = (hash: THash): Term => ({ tag: 'Unpack', hash });
 
 export const appFrom = (ts: Term[]): Term => ts.reduce(App);
 export const app = (...ts: Term[]): Term => appFrom(ts);
@@ -64,6 +71,7 @@ export const showTermP = (t: Term, b: boolean): string =>
   b ? `(${showTerm(t)})` : showTerm(t);
 export const showTerm = (t: Term): string => {
   if (t.tag === 'Con') return t.name;
+  if (t.tag === 'Hash') return `#${t.hash}`;
   if (t.tag === 'Var') return `${t.index}`;
   if (t.tag === 'App')
     return getApps(t)
@@ -85,5 +93,7 @@ export const showTerm = (t: Term): string => {
     const [ks, body] = getAbsTs(t);
     return `Λ${ks.map(k => showKindP(k, k.tag === 'KFun')).join(' ')}. ${showTerm(body)}`;
   }
+  if (t.tag === 'Pack') return `>#${t.hash}`;
+  if (t.tag === 'Unpack') return `<#${t.hash}`;
   return t;
 };

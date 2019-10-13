@@ -1,30 +1,48 @@
 // @ts-ignore
-import { kType, showKind } from './core/kinds';
+import { kType, showKind, kfun } from './core/kinds';
 // @ts-ignore
-import { tforall, tfun, TVar, showType, TDef, showTDef } from './core/types';
+import { tforall, tfun, TVar, showType, TDef, showTDef, THash } from './core/types';
 // @ts-ignore
-import { Var, abs, absT, showTerm, appT, app } from './core/term';
-import { typecheck, kindcheckTDef } from './core/typecheck';
+import { Var, abs, absT, showTerm, appT, app, Hash, Pack } from './core/terms';
+import { typecheck, EnvH } from './core/typecheck';
 
 /**
  * TODO:
- * - hashes
- * - con and decon
+ * - recursive types
+ * - hashing
  */
 
 const tv = TVar;
 const v = Var;
 
-const tbool = tforall([kType], tfun(tv(0), tv(0), tv(0)));
-const id = absT([kType], abs([tv(0)], v(0)));
-const vTrue = absT([kType], abs([tv(0), tv(0)], v(1)));
+const hs: EnvH = {
+  types: {
+    Bool: {
+      kind: kType,
+      def: TDef([], tforall([kType], tfun(tv(0), tv(0), tv(0)))),
+    },
+    List: {
+      kind: kfun(kType, kType),
+      def: TDef([kType], tforall([kType], tfun(tv(0), tfun(tv(1), tv(0), tv(0)), tv(0)))),
+    },
+  },
+  terms: {
+    id: {
+      type: tforall([kType], tfun(tv(0), tv(0))),
+      def: absT([kType], abs([tv(0)], v(0))),
+    },
+    True: {
+      type: THash('Bool'),
+      def: app(Pack('Bool'), absT([kType], abs([tv(0), tv(0)], v(1)))),
+    },
+    False: {
+      type: THash('Bool'),
+      def: app(Pack('Bool'), absT([kType], abs([tv(0), tv(0)], v(0)))),
+    }
+  },
+};
 
-const term = app(appT(id, tbool), vTrue);
+const term = app(Pack('Bool'), absT([kType], abs([tv(0), tv(0)], v(0))));
 console.log(showTerm(term));
-const ty = typecheck(term);
+const ty = typecheck(hs, term);
 console.log(showType(ty));
-
-const tdef = TDef([kType], tforall([kType], tfun(tv(0), tfun(tv(1), tv(0), tv(0)), tv(0))));
-console.log(showTDef(tdef));
-const ki = kindcheckTDef(tdef);
-console.log(showKind(ki));
