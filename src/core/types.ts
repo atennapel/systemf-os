@@ -1,4 +1,4 @@
-import { Kind, showKind, eqKind } from './kinds';
+import { Kind, eqKind, showKindP } from './kinds';
 
 export type TCon = '->';
 export type Ix = number;
@@ -13,7 +13,7 @@ export const TVar = (index: Ix): Type => ({ tag: 'TVar', index });
 export const TApp = (left: Type, right: Type): Type => ({ tag: 'TApp', left, right });
 export const TForall = (kind: Kind, body: Type): Type => ({ tag: 'TForall', kind, body });
 
-export type TFun = { tag: 'TApp', left: { tag: 'TApp', left: { tag: 'TCon', name: '->' }, right: Type }, right: Type }
+export type TFun = { tag: 'TApp', left: { tag: 'TApp', left: { tag: 'TCon', name: '->' }, right: Type }, right: Type };
 export const tFun = TCon('->');
 export const TFun = (left: Type, right: Type): Type => TApp(TApp(tFun, left), right);
 export const tfunFrom = (ts: Type[]): Type => ts.reduceRight((x, y) => TFun(y, x));
@@ -24,18 +24,52 @@ export const isTFun = (t: Type): t is TFun =>
 export const getTFun = (t: TFun): [Type, Type] => [t.left.right, t.right];
 export const matchTFun = (t: Type): [Type, Type] | null =>
   isTFun(t) ? getTFun(t) : null;
+export const getTFuns = (t: Type): Type[] => {
+  const r = [];
+  while (isTFun(t)) {
+    r.push(t.left.right);
+    t = t.right;
+  }
+  r.push(t);
+  return r;
+};
 
 export const tappFrom = (ts: Type[]): Type => ts.reduce(TApp);
 export const tapp = (...ts: Type[]): Type => tappFrom(ts);
+export const getTApps = (t: Type): Type[] => {
+  const r = [];
+  while (t.tag === 'TApp') {
+    r.push(t.right);
+    t = t.left;
+  }
+  return r.reverse();
+};
 export const tforall = (ks: Kind[], body: Type): Type =>
   ks.reduceRight((x, y) => TForall(y, x), body);
+export const getTForalls = (t: Type): [Kind[], Type] => {
+  const r = [];
+  while (t.tag === 'TForall') {
+    r.push(t.kind);
+    t = t.body;
+  }
+  return [r, t];
+};
 
+export const showTypeP = (t: Type, b: boolean): string =>
+  b ? `(${showType(t)})` : showType(t);
 export const showType = (t: Type): string => {
   if (t.tag === 'TCon') return t.name;
   if (t.tag === 'TVar') return `${t.index}`;
-  if (isTFun(t)) return `(${showType(t.left.right)} -> ${showType(t.right)})`;
-  if (t.tag === 'TApp') return `(${showType(t.left)} ${showType(t.right)})`;
-  if (t.tag === 'TForall') return `(∀${showKind(t.kind)}. ${showType(t.body)})`;
+  if (isTFun(t))
+    return getTFuns(t)
+      .map((t, i, a) => showTypeP(t, isTFun(t) || (t.tag === 'TForall' && i !== a.length - 1)))
+      .join(' -> ');
+  if (t.tag === 'TApp')
+    return getTApps(t).map(t => showTypeP(t, t.tag === 'TApp' || t.tag === 'TForall')).join(' ');
+  if (t.tag === 'TForall') {
+    const [ks, body] = getTForalls(t);
+    return `∀${ks.map(k => showKindP(k, k.tag === 'KFun')).join(' ')}. ${showType(body)}`;
+  }
   return t;
 };
 

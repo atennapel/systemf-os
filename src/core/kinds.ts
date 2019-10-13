@@ -9,10 +9,22 @@ export const KFun = (left: Kind, right: Kind): Kind => ({ tag: 'KFun', left, rig
 export const kType = KCon('*');
 export const kfunFrom = (ks: Kind[]): Kind => ks.reduceRight((x, y) => KFun(y, x));
 export const kfun = (...ks: Kind[]): Kind => kfunFrom(ks);
+export const getKFuns = (k: Kind): Kind[] => {
+  const r = [];
+  while (k.tag === 'KFun') {
+    r.push(k.left);
+    k = k.right;
+  }
+  r.push(k);
+  return r;
+};
 
+export const showKindP = (k: Kind, b: boolean): string =>
+  b ? `(${showKind(k)})` : showKind(k);
 export const showKind = (k: Kind): string => {
   if (k.tag === 'KCon') return k.name;
-  if (k.tag === 'KFun') return `(${showKind(k.left)} -> ${showKind(k.right)})`;
+  if (k.tag === 'KFun')
+    return getKFuns(k).map(k => showKindP(k, k.tag === 'KFun')).join(' -> ');
   return k;
 };
 

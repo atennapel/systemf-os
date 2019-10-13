@@ -5,8 +5,6 @@ import { kType } from './core/kinds';
  * TODO:
  * - terms
  * - typechecking
- * - pretty kinds
- * - pretty types
  * - pretty terms
  * - type defs, con and decon
  */
