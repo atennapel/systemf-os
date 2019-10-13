@@ -1,0 +1,16 @@
+{
+  "name": "systemf-os",
+  "version": "0.1.0",
+  "description": "Operating system based on System F",
+  "main": "build/src/index.js",
+  "repository": "https://github.com/atennapel/systemf-os.git",
+  "author": "Albert ten Napel <aptennap@gmail.com>",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc",
+    "buildindex": "npm run build && node build/src/index.js"
+  },
+  "dependencies": {
+    "typescript": "^3.6.4"
+  }
+}
