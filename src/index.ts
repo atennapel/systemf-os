@@ -5,6 +5,8 @@ import { tforall, tfun, TVar, showType, TDef, showTDef, THash } from './core/typ
 // @ts-ignore
 import { Var, abs, absT, showTerm, appT, app, Hash, Pack } from './core/terms';
 import { typecheck, EnvH } from './core/typecheck';
+import { serializeTerm } from './core/serialization';
+import { hashBytes } from './core/hashing';
 
 /**
  * TODO:
@@ -42,7 +44,11 @@ const hs: EnvH = {
   },
 };
 
-const term = app(Pack('Bool'), absT([kType], abs([tv(0), tv(0)], v(0))));
+const term = absT([kType], abs([tv(0), tv(0)], v(0)));
 console.log(showTerm(term));
 const ty = typecheck(hs, term);
 console.log(showType(ty));
+const buf = serializeTerm(term);
+console.log(buf.toString('hex'));
+const hsh = hashBytes(buf);
+console.log(hsh.toString('hex'));

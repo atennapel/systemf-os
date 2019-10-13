@@ -11,7 +11,7 @@
     "strictPropertyInitialization": true,
     "strictNullChecks": true,
     "noUnusedLocals": true,
-    "types": [],
+    "types": ["node"],
     "typeRoots": [ "node_modules/@types" ]
   },
   "include:": [
