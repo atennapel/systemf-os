@@ -82,7 +82,7 @@ export const showType = (t: Type): string => {
   return t;
 };
 export const showTDef = (t: TDef): string =>
-  `type ${t.kinds.map(k => showKindP(k, k.tag === 'KFun')).join(' ')} = ${showType(t.type)}`;
+  `type${t.kinds.length > 0 ? ' ' : ''}${t.kinds.map(k => showKindP(k, k.tag === 'KFun')).join(' ')} = ${showType(t.type)}`;
 
 export const eqType = (a: Type, b: Type): boolean => {
   if (a.tag === 'TCon') return b.tag === 'TCon' && a.name === b.name;
