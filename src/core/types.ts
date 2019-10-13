@@ -1,4 +1,4 @@
-import { Kind, showKind } from './kinds';
+import { Kind, showKind, eqKind } from './kinds';
 
 export type TCon = '->';
 export type Ix = number;
@@ -38,3 +38,27 @@ export const showType = (t: Type): string => {
   if (t.tag === 'TForall') return `(∀${showKind(t.kind)}. ${showType(t.body)})`;
   return t;
 };
+
+export const eqType = (a: Type, b: Type): boolean => {
+  if (a.tag === 'TCon') return b.tag === 'TCon' && a.name === b.name;
+  if (a.tag === 'TVar') return b.tag === 'TVar' && a.index === b.index;
+  if (a.tag === 'TApp')
+    return b.tag === 'TApp' && eqType(a.left, b.left) && eqType(a.right, b.right);
+  if (a.tag === 'TForall')
+    return b.tag === 'TForall' && eqKind(a.kind, b.kind) && eqType(a.body, b.body);
+  return a;
+};
+
+export const shift = (d: Ix, c: Ix, t: Type): Type => {
+  if (t.tag === 'TVar') return t.index < c ? t : TVar(t.index + d);
+  if (t.tag === 'TApp') return TApp(shift(d, c, t.left), shift(d, c, t.right));
+  if (t.tag === 'TForall') return TForall(t.kind, shift(d, c + 1, t.body));
+  return t;
+};
+export const subst = (j: Ix, s: Type, t: Type): Type => {
+  if (t.tag === 'TVar') return t.index === j ? s : t;
+  if (t.tag === 'TApp') return TApp(subst(j, s, t.left), subst(j, s, t.right));
+  if (t.tag === 'TForall') return TForall(t.kind, subst(j + 1, shift(1, 0, s), t.body));
+  return t;
+};
+export const substIn = (t: Type, s: Type): Type => shift(-1, 0, subst(0, shift(1, 0, s), t));
