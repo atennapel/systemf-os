@@ -1,14 +1,15 @@
 // @ts-ignore
-import { kType } from './core/kinds';
+import { kType, showKind } from './core/kinds';
 // @ts-ignore
-import { tforall, tfun, TVar, showType } from './core/types';
+import { tforall, tfun, TVar, showType, TDef, showTDef } from './core/types';
 // @ts-ignore
 import { Var, abs, absT, showTerm, appT, app } from './core/term';
-import { typecheck } from './core/typecheck';
+import { typecheck, kindcheckTDef } from './core/typecheck';
 
 /**
  * TODO:
- * - type defs, con and decon
+ * - hashes
+ * - con and decon
  */
 
 const tv = TVar;
@@ -22,3 +23,8 @@ const term = app(appT(id, tbool), vTrue);
 console.log(showTerm(term));
 const ty = typecheck(term);
 console.log(showType(ty));
+
+const tdef = TDef([kType], tforall([kType], tfun(tv(0), tfun(tv(1), tv(0), tv(0)), tv(0))));
+console.log(showTDef(tdef));
+const ki = kindcheckTDef(tdef);
+console.log(showKind(ki));

@@ -13,6 +13,9 @@ export const TVar = (index: Ix): Type => ({ tag: 'TVar', index });
 export const TApp = (left: Type, right: Type): Type => ({ tag: 'TApp', left, right });
 export const TForall = (kind: Kind, body: Type): Type => ({ tag: 'TForall', kind, body });
 
+export interface TDef { readonly kinds: Kind[]; readonly type: Type }
+export const TDef = (kinds: Kind[], type: Type): TDef => ({ kinds, type });
+
 export type TFun = { tag: 'TApp', left: { tag: 'TApp', left: { tag: 'TCon', name: '->' }, right: Type }, right: Type };
 export const tFun = TCon('->');
 export const TFun = (left: Type, right: Type): Type => TApp(TApp(tFun, left), right);
@@ -73,6 +76,8 @@ export const showType = (t: Type): string => {
   }
   return t;
 };
+export const showTDef = (t: TDef): string =>
+  `type ${t.kinds.map(k => showKindP(k, k.tag === 'KFun')).join(' ')} = ${showType(t.type)}`;
 
 export const eqType = (a: Type, b: Type): boolean => {
   if (a.tag === 'TCon') return b.tag === 'TCon' && a.name === b.name;

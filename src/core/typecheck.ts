@@ -1,7 +1,7 @@
-import { Type, TCon, eqType, showType, isTFun, getTFun, substIn, TForall, TFun } from './types';
+import { Type, TCon, eqType, showType, isTFun, getTFun, substIn, TForall, TFun, TDef } from './types';
 import { Term, Con, showTerm } from './term';
-import { kfun, kType, Kind, showKind, eqKind } from './kinds';
-import { List, Nil, index, Cons } from '../list';
+import { kfun, kType, Kind, showKind, eqKind, kfunFrom } from './kinds';
+import { List, Nil, index, Cons, append, listFrom } from '../list';
 
 export const terr = (msg: string) => {
   throw new TypeError(msg);
@@ -48,6 +48,11 @@ export const synthappType = (ks: EnvK, f: Type, ki: Kind, ty: Type): Kind => {
 
 export const kindcheck = (ty: Type, ks: EnvK = Nil): Kind =>
   synthType(ks, ty);
+export const kindcheckTDef = (t: TDef, ks: EnvK = Nil): Kind => {
+  const nks = append(listFrom(t.kinds.slice().reverse()), ks);
+  checkType(nks, t.type, kType);
+  return kfunFrom(t.kinds.concat(kType));
+};
 
 // type checking
 export const typeCon = (t: Con): Type => {
