@@ -42,6 +42,7 @@ export const getTApps = (t: Type): Type[] => {
     r.push(t.right);
     t = t.left;
   }
+  r.push(t);
   return r.reverse();
 };
 export const tforall = (ks: Kind[], body: Type): Type =>
