@@ -15,6 +15,7 @@ const serializeKindR = (term: Kind, arr: number[]): void => {
   if (term.tag === 'KCon') {
     arr.push(KIND_BYTES.KCon);
     if (term.name === '*') arr.push(KCON_BYTES.KType);
+    else return err(`invalid kind con: ${term.name}`);
     return;
   }
   if (term.tag === 'KFun') {
@@ -52,7 +53,7 @@ const serializeTypeR = (term: Type, arr: number[]): void => {
   if (term.tag === 'TCon') {
     arr.push(TYPE_BYTES.TCon);
     if (term.name === '->') arr.push(TCON_BYTES.TFun);
-    else return err(`invalid tconst name: ${term.name}`);
+    else return err(`invalid tcon name: ${term.name}`);
     return;
   }
   if (term.tag === 'THash') {
@@ -194,7 +195,7 @@ const deserializeKindR = (arr: Buffer, i: number): [number, Kind] => {
   if (c === KIND_BYTES.KCon) {
     const x = arr[i+1];
     if (x === KCON_BYTES.KType) return [i + 2, kType];
-    return err(`invalid tconst byte: ${x}`);
+    return err(`invalid kind const byte: ${x}`);
   }
   if (c === KIND_BYTES.KFun) {
     const [j, l] = deserializeKindR(arr, i + 1);
@@ -249,7 +250,7 @@ export const deserializeType = (arr: Buffer): Type => {
 export const deserializeTDef = (arr: Buffer): TDef => {
   const l = arr[0];
   const ks: Kind[] = Array(l);
-  let i = 0;
+  let i = 1;
   for (let j = 0; j < l; j++) {
     const [ni, k] = deserializeKindR(arr, i);
     ks[j] = k;
