@@ -5,7 +5,7 @@ import { tforall, tfun, TVar, showType, TDef, showTDef, THash, tByte } from './c
 // @ts-ignore
 import { Var, abs, absT, showTerm, appT, app, Hash, Pack, cZeroByte, cSuccByte, Unpack } from './core/terms';
 // @ts-ignore
-import { FileRepo, checkDef, addDef, addTDef } from './repo';
+import { FileRepo, checkDef, addDef, addTDef, getTDefByName } from './repo';
 // @ts-ignore
 import { EnvH } from './core/typecheck';
 // @ts-ignore
@@ -13,7 +13,6 @@ import { evaluate, showETerm } from './core/machine';
 
 /**
  * TODO:
- * - name repos
  * - surface language
  * - recursive types
  */
@@ -45,6 +44,9 @@ const succ = Hash('bc71d5d6a769f59c606bc4365189a2345e5dba98837f4a214eaad6b7c3717
     console.log(hsh);
     const res = evaluate(hs, tm);
     console.log(res);
+
+    const b = await getTDefByName(hs, repo, 'Nat');
+    console.log(`Nat ${b[0]} ; ${showTDef(b[1])} ; ${showKind(b[2])}`);
   } catch (err) {
     console.log(err);
   }
