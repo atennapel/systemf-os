@@ -1,6 +1,7 @@
 import { Kind, eqKind, showKindP } from './kinds';
+import { HashSet } from '../util';
 
-export type TCon = '->';
+export type TCon = '->' | 'Byte';
 export type THash = string;
 export type Ix = number;
 export type Type
@@ -18,6 +19,8 @@ export const TForall = (kind: Kind, body: Type): Type => ({ tag: 'TForall', kind
 
 export interface TDef { readonly kinds: Kind[]; readonly type: Type }
 export const TDef = (kinds: Kind[], type: Type): TDef => ({ kinds, type });
+
+export const tByte = TCon('Byte');
 
 export type TFun = { tag: 'TApp', left: { tag: 'TApp', left: { tag: 'TCon', name: '->' }, right: Type }, right: Type };
 export const tFun = TCon('->');
@@ -83,6 +86,16 @@ export const showType = (t: Type): string => {
 };
 export const showTDef = (t: TDef): string =>
   `type${t.kinds.length > 0 ? ' ' : ''}${t.kinds.map(k => showKindP(k, k.tag === 'KFun')).join(' ')} = ${showType(t.type)}`;
+
+export const hashesType = (t: Type, h: HashSet): void => {
+  if (t.tag === 'THash') { h[t.hash] = true; return }
+  if (t.tag === 'TApp') {
+    hashesType(t.left, h);
+    hashesType(t.right, h);
+    return;
+  }
+  if (t.tag === 'TForall') return hashesType(t.body, h);
+};
 
 export const eqType = (a: Type, b: Type): boolean => {
   if (a.tag === 'TCon') return b.tag === 'TCon' && a.name === b.name;

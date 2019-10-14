@@ -1,4 +1,4 @@
-import { Type, TCon, eqType, showType, isTFun, getTFun, substIn, TForall, TFun, TDef, THash, tforall, tapp1, TVar } from './types';
+import { Type, TCon, eqType, showType, isTFun, getTFun, substIn, TForall, TFun, TDef, THash, tforall, tapp1, TVar, tByte } from './types';
 import { Term, Con, showTerm } from './terms';
 import { kfun, kType, Kind, showKind, eqKind, kfunFrom } from './kinds';
 import { List, Nil, index, Cons, append, listFrom } from '../list';
@@ -17,6 +17,7 @@ export interface EnvH {
 // kind checking
 export const kindTCon = (t: TCon): Kind => {
   if (t === '->') return kfun(kType, kType, kType);
+  if (t === 'Byte') return kType;
   return t;
 };
 
@@ -65,6 +66,8 @@ export const kindcheckTDef = (hs: EnvH, t: TDef, ks: EnvK = Nil): Kind => {
 
 // type checking
 export const typeCon = (t: Con): Type => {
+  if (t === 'zeroByte') return tByte;
+  if (t === 'succByte') return TFun(tByte, tByte);
   return t;
 };
 

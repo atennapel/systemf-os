@@ -1,15 +1,15 @@
 import { Kind, showKind, kType, KFun } from './kinds';
 import { err } from '../util';
 import { HASH_SIZE } from './hashing';
-import { Type, TDef, showTDef, tFun, TApp, THash, TForall, TVar, showType } from './types';
-import { Term, showTerm, Var, Hash, Abs, App, AbsT, AppT, Pack, Unpack } from './terms';
+import { Type, TDef, showTDef, tFun, TApp, THash, TForall, TVar, showType, tByte } from './types';
+import { Term, showTerm, Var, Hash, Abs, App, AbsT, AppT, Pack, Unpack, cZeroByte, cSuccByte } from './terms';
 
 export enum KIND_BYTES {
-  KCon = 0,
+  KCon,
   KFun,
 }
 export enum KCON_BYTES {
-  KType = 0,
+  KType,
 }
 const serializeKindR = (term: Kind, arr: number[]): void => {
   if (term.tag === 'KCon') {
@@ -33,13 +33,14 @@ export const serializeKind = (term: Kind): Buffer => {
 };
 
 export enum TYPE_BYTES {
-  TCon = 0,
+  TCon,
   THash,
   TApp,
   TForall,
 }
 export enum TCON_BYTES {
-  TFun = 0,
+  TFun,
+  TByte,
 }
 export const TVAR_BYTE = 4;
 export const MAX_TVAR_BYTE = Math.pow(2, 8) - TVAR_BYTE - 1;
@@ -53,6 +54,7 @@ const serializeTypeR = (term: Type, arr: number[]): void => {
   if (term.tag === 'TCon') {
     arr.push(TYPE_BYTES.TCon);
     if (term.name === '->') arr.push(TCON_BYTES.TFun);
+    else if (term.name === 'Byte') arr.push(TCON_BYTES.TByte);
     else return err(`invalid tcon name: ${term.name}`);
     return;
   }
@@ -108,7 +110,10 @@ export enum TERM_BYTES {
   Pack,
   Unpack,
 }
-export enum CONST_BYTES {}
+export enum CON_BYTES {
+  ZeroByte,
+  SuccByte,
+}
 export const VAR_BYTE = 8;
 export const MAX_VAR_BYTE = Math.pow(2, 8) - VAR_BYTE - 1;
 const serializeTermR = (term: Term, arr: number[]): void => {
@@ -180,7 +185,10 @@ const serializeTermR = (term: Term, arr: number[]): void => {
   }
   if (term.tag === 'Con') {
     arr.push(TERM_BYTES.Con);
-    return err(`invalid const name: ${term.name}`);
+    if (term.name === 'zeroByte') arr.push(CON_BYTES.ZeroByte);
+    else if (term.name === 'succByte') arr.push(CON_BYTES.SuccByte);
+    else return err(`invalid con name: ${term.name}`);
+    return;
   }
   return term;
 };
@@ -217,7 +225,8 @@ const deserializeTypeR = (arr: Buffer, i: number): [number, Type] => {
   if (c === TYPE_BYTES.TCon) {
     const x = arr[i+1];
     if (x === TCON_BYTES.TFun) return [i + 2, tFun];
-    return err(`invalid tconst byte: ${x}`);
+    if (x === TCON_BYTES.TByte) return [i + 2, tByte];
+    return err(`invalid tcon byte: ${x}`);
   }
   if (c === TYPE_BYTES.TApp) {
     const [j, l] = deserializeTypeR(arr, i + 1);
@@ -315,6 +324,8 @@ const deserializeTermR = (arr: Buffer, i: number): [number, Term] => {
   }
   if (c === TERM_BYTES.Con) {
     const x = arr[i+1];
+    if (x === CON_BYTES.ZeroByte) return [i + 2, cZeroByte];
+    if (x === CON_BYTES.SuccByte) return [i + 2, cSuccByte];
     return err(`invalid const byte: ${x}`);
   }
   return [i + 1, Var(c - VAR_BYTE)];

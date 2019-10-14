@@ -1,7 +1,8 @@
-import { Type, showTypeP, THash } from './types';
+import { Type, showTypeP, THash, hashesType } from './types';
 import { Kind, showKindP } from './kinds';
+import { HashSet } from '../util';
 
-export type Con = never;
+export type Con = 'zeroByte' | 'succByte';
 export type Hash = string;
 export type Ix = number;
 export type Term
@@ -24,6 +25,9 @@ export const AppT = (left: Term, right: Type): Term => ({ tag: 'AppT', left, rig
 export const AbsT = (kind: Kind, body: Term): Term => ({ tag: 'AbsT', kind, body });
 export const Pack = (hash: THash): Term => ({ tag: 'Pack', hash });
 export const Unpack = (hash: THash): Term => ({ tag: 'Unpack', hash });
+
+export const cZeroByte = Con('zeroByte');
+export const cSuccByte = Con('succByte');
 
 export const appFrom = (ts: Term[]): Term => ts.reduce(App);
 export const app = (...ts: Term[]): Term => appFrom(ts);
@@ -96,4 +100,27 @@ export const showTerm = (t: Term): string => {
   if (t.tag === 'Pack') return `>#${t.hash}`;
   if (t.tag === 'Unpack') return `<#${t.hash}`;
   return t;
+};
+
+export const hashesTerm = (t: Term, h: HashSet, th: HashSet): void => {
+  if (t.tag === 'Hash') { h[t.hash] = true; return }
+  if (t.tag === 'Pack') { th[t.hash] = true; return }
+  if (t.tag === 'Unpack') { th[t.hash] = true; return }
+  if (t.tag === 'App') {
+    hashesTerm(t.left, h, th);
+    hashesTerm(t.right, h, th);
+    return;
+  }
+  if (t.tag === 'AppT') {
+    hashesTerm(t.left, h, th)
+    hashesType(t.right, th);
+    return;
+  }
+  if (t.tag === 'Abs') {
+    hashesType(t.type, th);
+    hashesTerm(t.body, h, th);
+    return;
+  }
+  if (t.tag === 'AbsT')
+    return hashesTerm(t.body, h, th);
 };
