@@ -1,4 +1,4 @@
-import { Type, showTypeP, THash, hashesType, TName } from './types';
+import { Type, showTypeP, THash, hashesType, TName, showType } from './types';
 import { Kind, showKindP } from './kinds';
 import { HashSet } from '../util';
 
@@ -14,7 +14,8 @@ export type Term
   | { tag: 'AppT', left: Term, right: Type }
   | { tag: 'AbsT', name: TName, kind: Kind, body: Term }
   | { tag: 'Pack', hash: THash }
-  | { tag: 'Unpack', hash: THash };
+  | { tag: 'Unpack', hash: THash }
+  | { tag: 'Ann', term: Term, type: Type };
 
 export const Con = (name: Con): Term => ({ tag: 'Con', name });
 export const Hash = (hash: Hash): Term => ({ tag: 'Hash', hash });
@@ -82,12 +83,13 @@ export const showTerm = (t: Term): string => {
       .map((t, i, a) => showTermP(t,
         (t.tag === 'App' && i > 0) ||
         (t.tag === 'AppT' && i > 0) ||
+        t.tag === 'Ann' ||
         (t.tag === 'Abs' && i !== a.length - 1) ||
         (t.tag === 'AbsT' && i !== a.length - 1)))
       .join(' ');
   if (t.tag === 'AppT') {
     const [tm, ts] = getAppTs(t);
-    return `${showTermP(tm, tm.tag === 'Abs' || tm.tag === 'AbsT')} ${ts.map(t => `@${showTypeP(t, t.tag === 'TApp' || t.tag === 'TForall')}`).join(' ')}`;
+    return `${showTermP(tm, tm.tag === 'Abs' || tm.tag === 'AbsT' || tm.tag === 'Ann')} ${ts.map(t => `@${showTypeP(t, t.tag === 'TApp' || t.tag === 'TForall')}`).join(' ')}`;
   }
   if (t.tag === 'Abs') {
     const [ts, body] = getAbss(t);
@@ -99,6 +101,7 @@ export const showTerm = (t: Term): string => {
   }
   if (t.tag === 'Pack') return `>#${t.hash}`;
   if (t.tag === 'Unpack') return `<#${t.hash}`;
+  if (t.tag === 'Ann') return `${showTerm(t.term)} : ${showType(t.type)}`
   return t;
 };
 
@@ -123,4 +126,9 @@ export const hashesTerm = (t: Term, h: HashSet, th: HashSet): void => {
   }
   if (t.tag === 'AbsT')
     return hashesTerm(t.body, h, th);
+  if (t.tag === 'Ann') {
+    hashesTerm(t.term, h, th);
+    hashesType(t.type, th);
+    return;
+  }
 };

@@ -125,6 +125,11 @@ export const synth = (hs: EnvH, ts: EnvT, ks: EnvK, tm: Term): [Type, E.Term] =>
     if (!def) return terr(`undefined type hash: ${showTerm(tm)}`);
     return terr(`unimplemented: Unpack`);
   }
+  if (tm.tag === 'Ann') {
+    checkType(hs, ks, tm.type, kType);
+    const etm = check(hs, ts, ks, tm.term, tm.type);
+    return [tm.type, etm];
+  }
   return tm;
 };
 export const synthapp = (hs: EnvH, ts: EnvT, ks: EnvK, f: Term, ty: Type, tm: Term): [Type, E.Term] => {
