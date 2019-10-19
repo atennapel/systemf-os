@@ -10,7 +10,7 @@ export type Term
   | { tag: 'Hash', hash: Hash }
   | { tag: 'Var', name: Name }
   | { tag: 'App', left: Term, right: Term }
-  | { tag: 'Abs', name: Name, type: Type, body: Term }
+  | { tag: 'Abs', name: Name, type: Type | null, body: Term }
   | { tag: 'AppT', left: Term, right: Type }
   | { tag: 'AbsT', name: TName, kind: Kind, body: Term }
   | { tag: 'Pack', hash: THash }
@@ -21,11 +21,12 @@ export const Con = (name: Con): Term => ({ tag: 'Con', name });
 export const Hash = (hash: Hash): Term => ({ tag: 'Hash', hash });
 export const Var = (name: Name): Term => ({ tag: 'Var', name });
 export const App = (left: Term, right: Term): Term => ({ tag: 'App', left, right });
-export const Abs = (name: Name, type: Type, body: Term): Term => ({ tag: 'Abs', name, type, body });
+export const Abs = (name: Name, type: Type | null, body: Term): Term => ({ tag: 'Abs', name, type, body });
 export const AppT = (left: Term, right: Type): Term => ({ tag: 'AppT', left, right });
 export const AbsT = (name: TName, kind: Kind, body: Term): Term => ({ tag: 'AbsT', name, kind, body });
 export const Pack = (hash: THash): Term => ({ tag: 'Pack', hash });
 export const Unpack = (hash: THash): Term => ({ tag: 'Unpack', hash });
+export const Ann = (term: Term, type: Type): Term => ({ tag: 'Ann', term, type });
 
 export const cZeroByte = Con('zeroByte');
 export const cSuccByte = Con('succByte');
@@ -51,10 +52,10 @@ export const getAppTs = (t: Term): [Term, Type[]] => {
   }
   return [t, r.reverse()];
 };
-export const abs = (ts: [Name, Type][], body: Term): Term =>
+export const abs = (ts: [Name, (Type | null)][], body: Term): Term =>
   ts.reduceRight((b, [x, t]) => Abs(x, t, b), body);
-export const getAbss = (t: Term): [[Name, Type][], Term] => {
-  const r: [Name, Type][] = [];
+export const getAbss = (t: Term): [[Name, (Type | null)][], Term] => {
+  const r: [Name, (Type | null)][] = [];
   while (t.tag === 'Abs') {
     r.push([t.name, t.type]);
     t = t.body;
@@ -93,15 +94,16 @@ export const showTerm = (t: Term): string => {
   }
   if (t.tag === 'Abs') {
     const [ts, body] = getAbss(t);
-    return `λ${ts.map(([x, t]) => `(${x} : ${showTypeP(t, t.tag === 'TApp' || t.tag === 'TForall')})`).join('')}. ${showTerm(body)}`;
+    return `λ${ts.map(([x, t]) =>
+      t ? `(${x} : ${showTypeP(t, t.tag === 'TApp' || t.tag === 'TForall')})` : x).join(' ')}. ${showTermP(body, body.tag === 'Ann')}`;
   }
   if (t.tag === 'AbsT') {
     const [ks, body] = getAbsTs(t);
-    return `Λ${ks.map(([x, k]) => `(${x} : ${showKindP(k, k.tag === 'KFun')})`).join('')}. ${showTerm(body)}`;
+    return `Λ${ks.map(([x, k]) => `(${x} : ${showKindP(k, k.tag === 'KFun')})`).join('')}. ${showTermP(body, body.tag === 'Ann')}`;
   }
   if (t.tag === 'Pack') return `>#${t.hash}`;
   if (t.tag === 'Unpack') return `<#${t.hash}`;
-  if (t.tag === 'Ann') return `${showTerm(t.term)} : ${showType(t.type)}`
+  if (t.tag === 'Ann') return `${showTermP(t.term, t.term.tag === 'Ann')} : ${showType(t.type)}`
   return t;
 };
 
@@ -120,7 +122,7 @@ export const hashesTerm = (t: Term, h: HashSet, th: HashSet): void => {
     return;
   }
   if (t.tag === 'Abs') {
-    hashesType(t.type, th);
+    if (t.type) hashesType(t.type, th);
     hashesTerm(t.body, h, th);
     return;
   }

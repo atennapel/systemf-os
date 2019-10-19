@@ -78,6 +78,12 @@ export const typeCon = (t: Con): [Type, E.Term] => {
 };
 
 export const check = (hs: EnvH, ts: EnvT, ks: EnvK, tm: Term, ty: Type): E.Term => {
+  if (tm.tag === 'Abs' && !tm.type && isTFun(ty)) {
+    const [left, right] = getTFun(ty);
+    const ety = checkType(hs, ks, left, kType);
+    const body = check(hs, Cons([tm.name, left], ts), ks, tm.body, right);
+    return E.Abs(ety, body);
+  }
   const [ty2, etm] = synth(hs, ts, ks, tm);
   if (!eqType(ty2, ty))
     terr(`typecheck failed in ${showTerm(tm)}: ${showType(ty2)} ~ ${showType(ty)}`);
@@ -96,7 +102,7 @@ export const synth = (hs: EnvH, ts: EnvT, ks: EnvK, tm: Term): [Type, E.Term] =>
     const [i, ty] = res;
     return [ty, E.Var(i)];
   }
-  if (tm.tag === 'Abs') {
+  if (tm.tag === 'Abs' && tm.type) {
     const ety = checkType(hs, ks, tm.type, kType);
     const [ty, body] = synth(hs, Cons([tm.name, tm.type], ts), ks, tm.body);
     return [TFun(tm.type, ty), E.Abs(ety, body)];
@@ -130,7 +136,7 @@ export const synth = (hs: EnvH, ts: EnvT, ks: EnvK, tm: Term): [Type, E.Term] =>
     const etm = check(hs, ts, ks, tm.term, tm.type);
     return [tm.type, etm];
   }
-  return tm;
+  return terr(`cannot synth ${showTerm(tm)}`);
 };
 export const synthapp = (hs: EnvH, ts: EnvT, ks: EnvK, f: Term, ty: Type, tm: Term): [Type, E.Term] => {
   if (isTFun(ty)) {
